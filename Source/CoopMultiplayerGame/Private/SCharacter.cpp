@@ -21,7 +21,7 @@ ASCharacter::ASCharacter()
 	CameraComp->SetupAttachment(SpringArmComp);	
 
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
-	GetMovementComponent()->GetNavAgentPropertiesRef().bCanJump = true;
+	//GetMovementComponent()->GetNavAgentPropertiesRef().bCanJump = true;
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanWalk = true;
 }
 
@@ -64,6 +64,12 @@ void ASCharacter::StopCrouch()
 	UE_LOG(LogTemp, Warning, TEXT("StopCrouch"));
 }
 
+void ASCharacter::StartJump()
+{
+	Jump();
+	UE_LOG(LogTemp, Warning, TEXT("StartJump"));
+}
+
 // Called to bind functionality to input
 void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -77,5 +83,6 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASCharacter::StartCrouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ASCharacter::StopCrouch);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASCharacter::StartJump);
 }
 
