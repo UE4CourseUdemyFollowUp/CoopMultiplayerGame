@@ -25,6 +25,22 @@ ASCharacter::ASCharacter()
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanWalk = true;
 }
 
+FVector ASCharacter::GetPawnViewLocation() const
+{
+	FVector ViewLocation;
+
+	if (CameraComp)
+	{
+		ViewLocation = CameraComp->GetComponentLocation();
+	}
+	else
+	{
+		ViewLocation = Super::GetPawnViewLocation();
+	}
+
+	return ViewLocation;
+}
+
 // Called when the game starts or when spawned
 void ASCharacter::BeginPlay()
 {
