@@ -23,6 +23,9 @@ ASCharacter::ASCharacter()
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
 	//GetMovementComponent()->GetNavAgentPropertiesRef().bCanJump = true;
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanWalk = true;
+
+	ZoomFOV = 60.f;
+	ZoomInterpSpeed = 20.f;
 }
 
 FVector ASCharacter::GetPawnViewLocation() const
@@ -46,6 +49,11 @@ void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (CameraComp)
+	{
+		DefaultFOV = CameraComp->FieldOfView;
+		UE_LOG(LogTemp, Warning, TEXT("DefaultFOV set"));
+	}
 }
 
 // Called every frame
@@ -53,6 +61,11 @@ void ASCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	float CurrentZoom = bWantsToZoom ? ZoomFOV : DefaultFOV;
+
+	float NewZoom = FMath::FInterpTo(CameraComp->FieldOfView, CurrentZoom, DeltaTime, ZoomInterpSpeed);
+
+	CameraComp->SetFieldOfView(NewZoom);
 }
 
 void ASCharacter::MoveForward(float Value)
@@ -86,6 +99,18 @@ void ASCharacter::StartJump()
 	UE_LOG(LogTemp, Warning, TEXT("StartJump"));
 }
 
+void ASCharacter::StartZoom()
+{
+	bWantsToZoom = true;
+	UE_LOG(LogTemp, Warning, TEXT("StartZoom"));
+}
+
+void ASCharacter::StopZoom()
+{
+	bWantsToZoom = false;
+	UE_LOG(LogTemp, Warning, TEXT("StopZoom"));
+}
+
 // Called to bind functionality to input
 void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -100,5 +125,8 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASCharacter::StartCrouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ASCharacter::StopCrouch);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASCharacter::StartJump);
+
+	PlayerInputComponent->BindAction("Zoom", IE_Pressed, this, &ASCharacter::StartZoom);
+	PlayerInputComponent->BindAction("Zoom", IE_Released, this, &ASCharacter::StopZoom);
 }
 
