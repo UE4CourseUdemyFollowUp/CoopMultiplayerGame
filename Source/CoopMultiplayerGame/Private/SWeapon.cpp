@@ -10,7 +10,7 @@
 #include "Particles/ParticleSystemComponent.h"
 
 static int32 DebugWeaponDrawing = 0;
-FAutoConsoleVariableRef(TEXT("COOP.DebugWeaponsDrawing"), DebugWeaponDrawing, TEXT("Draw Weapon Debug Shapes"), ECVF_Cheat);
+FAutoConsoleVariableRef DebugWeaponDrawConsoleVar( TEXT("COOP.DebugWeaponsDrawing"), DebugWeaponDrawing, TEXT("Draw Weapon Debug Shapes"), ECVF_Cheat);
 
 // Sets default values
 ASWeapon::ASWeapon()
