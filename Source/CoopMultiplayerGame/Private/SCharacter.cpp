@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "CoopMultiplayerGame/Public/SCharacter.h"
+#include "CoopMultiplayerGame/Public/SWeapon.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
@@ -26,6 +27,8 @@ ASCharacter::ASCharacter()
 
 	ZoomFOV = 60.f;
 	ZoomInterpSpeed = 20.f;
+
+	WeaponAttachSocket = "WeaponSocket";
 }
 
 FVector ASCharacter::GetPawnViewLocation() const
@@ -53,6 +56,26 @@ void ASCharacter::BeginPlay()
 	{
 		DefaultFOV = CameraComp->FieldOfView;
 		UE_LOG(LogTemp, Warning, TEXT("DefaultFOV set"));
+	}
+
+	DefaultStartWeapon;
+
+	FActorSpawnParameters WeaponSpawnParams;
+	WeaponSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	CurrentWeapon = GetWorld()->SpawnActor<ASWeapon>(DefaultStartWeapon, FVector::ZeroVector, FRotator::ZeroRotator, WeaponSpawnParams);
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->SetOwner(this);
+		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponAttachSocket);
+	}
+}
+
+void ASCharacter::Fire()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->Fire();
 	}
 }
 
@@ -128,5 +151,7 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAction("Zoom", IE_Pressed, this, &ASCharacter::StartZoom);
 	PlayerInputComponent->BindAction("Zoom", IE_Released, this, &ASCharacter::StopZoom);
+
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ASCharacter::Fire);
 }
 

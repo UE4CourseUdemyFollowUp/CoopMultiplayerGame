@@ -8,6 +8,7 @@
 
 class UCameraComponent;
 class USpringArmComponent;
+class ASWeapon;
 
 UCLASS()
 class COOPMULTIPLAYERGAME_API ASCharacter : public ACharacter
@@ -54,13 +55,20 @@ protected:
 
 	bool bWantsToZoom;	
 
+	void Fire();
+
+	ASWeapon* CurrentWeapon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player")
+	TSubclassOf<ASWeapon> DefaultStartWeapon;
+
+	UPROPERTY( VisibleDefaultsOnly, Category = "Player")
+	FName WeaponAttachSocket;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	
-	
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;	
 };
