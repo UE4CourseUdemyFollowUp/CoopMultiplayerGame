@@ -18,6 +18,7 @@ FAutoConsoleVariableRef DebugWeaponDrawConsoleVar( TEXT("COOP.DebugWeaponsDrawin
 // Sets default values
 ASWeapon::ASWeapon()
 	: MuzzleSocketName("MuzzleSocket")
+	, BaseDamage(20.f)
 {
 	MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComp"));
 	RootComponent = MeshComp;
@@ -51,18 +52,24 @@ void ASWeapon::Fire()
 		{
 			AActor* HitActor = HitResult.GetActor();
 
-			UGameplayStatics::ApplyPointDamage(HitActor, 20.f, ShotDirection, HitResult, Owner->GetInstigatorController(), this, DamageType);
-
 			TraceEndPoint = HitResult.ImpactPoint;
 
 			EPhysicalSurface PhysicalSurface = UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
+
+			float ActualDamage = BaseDamage;
+			if (PhysicalSurface == SURFACE_FLASHVULNERABLE)
+			{
+				ActualDamage *= 4.f;
+			}
+
+			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, HitResult, Owner->GetInstigatorController(), this, DamageType);
 
 			UParticleSystem* SelectedEffect = nullptr;
 
 			switch (PhysicalSurface)
 			{
 			case SURFACE_FLESHDEFAULT:
-			case SURFACE_FLASHvULNERABLE:
+			case SURFACE_FLASHVULNERABLE:
 				SelectedEffect = FleshImpactEffect;
 				break;
 			default:
