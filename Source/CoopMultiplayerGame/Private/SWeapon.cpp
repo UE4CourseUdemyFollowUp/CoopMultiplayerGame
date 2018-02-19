@@ -47,7 +47,7 @@ void ASWeapon::Fire()
 		CollisionParams.bReturnPhysicalMaterial = true;
 
 		FHitResult HitResult;
-		if (GetWorld()->LineTraceSingleByChannel(HitResult, EyeLocation, TraceEnd, ECC_Visibility, CollisionParams))
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, EyeLocation, TraceEnd, COLLISION_WEAPON, CollisionParams))
 		{
 			AActor* HitActor = HitResult.GetActor();
 
