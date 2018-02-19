@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "CollisionQueryParams.h"
 #include "Engine/World.h"
+#include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemComponent.h"
@@ -19,9 +20,17 @@ FAutoConsoleVariableRef DebugWeaponDrawConsoleVar( TEXT("COOP.DebugWeaponsDrawin
 ASWeapon::ASWeapon()
 	: MuzzleSocketName("MuzzleSocket")
 	, BaseDamage(20.f)
+	, RateOfFire(600.f)
 {
 	MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComp"));
 	RootComponent = MeshComp;
+}
+
+void ASWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+
+	TimeBetweenShots = 60.f / RateOfFire;
 }
 
 void ASWeapon::Fire()
@@ -92,6 +101,18 @@ void ASWeapon::Fire()
 
 	}
 
+}
+
+void ASWeapon::StartFire()
+{
+	float FirstDelay = FMath::Max(LastTimeFired + TimeBetweenShots - GetWorld()->TimeSeconds, 0.f);
+
+	GetWorldTimerManager().SetTimer(HandleTimer_TimeBetweenShots, this, &ASWeapon::Fire, TimeBetweenShots, true, FirstDelay);
+}
+
+void ASWeapon::StopFire()
+{
+	GetWorldTimerManager().ClearTimer(HandleTimer_TimeBetweenShots);
 }
 
 void ASWeapon::PlayFireEffects(const FVector& TraceEnd)

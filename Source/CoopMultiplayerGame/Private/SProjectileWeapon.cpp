@@ -7,7 +7,7 @@ ASProjectileWeapon::ASProjectileWeapon()
 {
 }
 
-void ASProjectileWeapon::Fire()
+void ASProjectileWeapon::StartFire()
 {
 	AActor* Owner = GetOwner();
 

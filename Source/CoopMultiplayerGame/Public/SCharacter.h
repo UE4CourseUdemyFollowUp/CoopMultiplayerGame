@@ -55,7 +55,9 @@ protected:
 
 	bool bWantsToZoom;	
 
-	void Fire();
+	void StartFire();
+
+	void StopFire();
 
 	ASWeapon* CurrentWeapon;
 

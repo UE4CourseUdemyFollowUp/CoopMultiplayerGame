@@ -20,7 +20,7 @@ public:
 protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	virtual void Fire() override;
+	virtual void StartFire() override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TSubclassOf<AActor> ProjectileClass;	
