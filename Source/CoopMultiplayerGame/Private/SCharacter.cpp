@@ -5,6 +5,9 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
+#include "Components/CapsuleComponent.h"
+
+#include "CoopMultiplayerGame.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -24,6 +27,8 @@ ASCharacter::ASCharacter()
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
 	//GetMovementComponent()->GetNavAgentPropertiesRef().bCanJump = true;
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanWalk = true;
+
+	GetCapsuleComponent()->SetCollisionResponseToChannel(COLLISION_WEAPON, ECollisionResponse::ECR_Ignore);
 
 	ZoomFOV = 60.f;
 	ZoomInterpSpeed = 20.f;
