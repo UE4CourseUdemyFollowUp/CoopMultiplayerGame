@@ -9,6 +9,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class ASWeapon;
+class USHealthComponent;
 
 UCLASS()
 class COOPMULTIPLAYERGAME_API ASCharacter : public ACharacter
@@ -39,11 +40,17 @@ protected:
 
 	virtual void StopZoom();
 
+	UFUNCTION()
+	void OnHealthChanged(USHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UCameraComponent* CameraComp;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* SpringArmComp;
+
+	UPROPERTY()
+	USHealthComponent* HealthComp;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
 	float ZoomFOV;
@@ -66,6 +73,9 @@ protected:
 
 	UPROPERTY( VisibleDefaultsOnly, Category = "Player")
 	FName WeaponAttachSocket;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Player")
+	bool bDied;
 
 public:	
 	// Called every frame

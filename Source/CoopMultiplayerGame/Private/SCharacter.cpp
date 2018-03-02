@@ -2,6 +2,7 @@
 
 #include "CoopMultiplayerGame/Public/SCharacter.h"
 #include "CoopMultiplayerGame/Public/SWeapon.h"
+#include "CoopMultiplayerGame/Public/Components/SHealthComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
@@ -24,6 +25,8 @@ ASCharacter::ASCharacter()
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
 	CameraComp->SetupAttachment(SpringArmComp);	
 
+	HealthComp = CreateDefaultSubobject<USHealthComponent>(TEXT("HealthComp"));
+
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
 	//GetMovementComponent()->GetNavAgentPropertiesRef().bCanJump = true;
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanWalk = true;
@@ -34,6 +37,8 @@ ASCharacter::ASCharacter()
 	ZoomInterpSpeed = 20.f;
 
 	WeaponAttachSocket = "WeaponSocket";
+
+	bDied = false;
 }
 
 FVector ASCharacter::GetPawnViewLocation() const
@@ -74,6 +79,8 @@ void ASCharacter::BeginPlay()
 		CurrentWeapon->SetOwner(this);
 		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponAttachSocket);
 	}
+
+	HealthComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
 }
 
 void ASCharacter::StartFire()
@@ -145,6 +152,22 @@ void ASCharacter::StopZoom()
 {
 	bWantsToZoom = false;
 	UE_LOG(LogTemp, Warning, TEXT("StopZoom"));
+}
+
+void ASCharacter::OnHealthChanged(USHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
+{
+	if (Health <= 0.f && !bDied)
+	{
+		// Death
+
+		bDied = true;
+
+		GetMovementComponent()->StopMovementImmediately();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		DetachFromControllerPendingDestroy();
+		SetLifeSpan(10.f);
+	}
 }
 
 // Called to bind functionality to input
