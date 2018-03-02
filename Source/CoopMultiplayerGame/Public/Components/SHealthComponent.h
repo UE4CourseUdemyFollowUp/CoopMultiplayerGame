@@ -7,6 +7,8 @@
 #include "SHealthComponent.generated.h"
 
 
+DECLARE_DYNAMIC_DELEGATE_SixParams(FOnHealthChangedSignature, USHealthComponent*, HealthComp, float, Health, float, HealthDelta, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
+
 UCLASS( ClassGroup=(COOP), meta=(BlueprintSpawnableComponent) )
 class COOPMULTIPLAYERGAME_API USHealthComponent : public UActorComponent
 {
@@ -15,6 +17,9 @@ class COOPMULTIPLAYERGAME_API USHealthComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	USHealthComponent();
+
+	UPROPERTY(BlueprintAssignable, Category = "Event")
+	FOnHealthChangedSignature OnHealthChanged;
 
 protected:
 	// Called when the game starts
