@@ -41,7 +41,7 @@ protected:
 	virtual void StopZoom();
 
 	UFUNCTION()
-	void OnHealthChanged(USHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+	void OnHealthChanged(USHealthComponent* OwningHealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UCameraComponent* CameraComp;
@@ -49,7 +49,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* SpringArmComp;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USHealthComponent* HealthComp;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
