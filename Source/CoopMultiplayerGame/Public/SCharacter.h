@@ -22,6 +22,8 @@ public:
 
 	virtual FVector GetPawnViewLocation() const override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -38,7 +40,7 @@ protected:
 
 	virtual void StartZoom();
 
-	virtual void StopZoom();
+	virtual void StopZoom();	
 
 	UFUNCTION()
 	void OnHealthChanged(USHealthComponent* OwningHealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
@@ -66,6 +68,7 @@ protected:
 
 	void StopFire();
 
+	UPROPERTY(Replicated)
 	ASWeapon* CurrentWeapon;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player")

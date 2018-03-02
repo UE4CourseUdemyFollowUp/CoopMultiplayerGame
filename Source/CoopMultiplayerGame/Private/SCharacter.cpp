@@ -7,6 +7,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Net/UnrealNetwork.h"
 
 #include "CoopMultiplayerGame.h"
 
@@ -68,19 +69,20 @@ void ASCharacter::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("DefaultFOV set"));
 	}
 
-	DefaultStartWeapon;
-
-	FActorSpawnParameters WeaponSpawnParams;
-	WeaponSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	CurrentWeapon = GetWorld()->SpawnActor<ASWeapon>(DefaultStartWeapon, FVector::ZeroVector, FRotator::ZeroRotator, WeaponSpawnParams);
-	if (CurrentWeapon)
-	{
-		CurrentWeapon->SetOwner(this);
-		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponAttachSocket);
-	}
-
 	HealthComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+	
+	if (Role == ROLE_Authority)
+	{
+		FActorSpawnParameters WeaponSpawnParams;
+		WeaponSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		CurrentWeapon = GetWorld()->SpawnActor<ASWeapon>(DefaultStartWeapon, FVector::ZeroVector, FRotator::ZeroRotator, WeaponSpawnParams);
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->SetOwner(this);
+			CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponAttachSocket);
+		}
+	}	
 }
 
 void ASCharacter::StartFire()
@@ -190,5 +192,12 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::StartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ASCharacter::StopFire);
+}
+
+void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASCharacter, CurrentWeapon);
 }
 

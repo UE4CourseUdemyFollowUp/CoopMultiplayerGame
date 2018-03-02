@@ -24,6 +24,8 @@ ASWeapon::ASWeapon()
 {
 	MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComp"));
 	RootComponent = MeshComp;
+
+	SetReplicates(true);
 }
 
 void ASWeapon::BeginPlay()
