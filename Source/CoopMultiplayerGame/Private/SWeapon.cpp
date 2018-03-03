@@ -10,6 +10,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Net/UnrealNetwork.h"
 
 #include "CoopMultiplayerGame/CoopMultiplayerGame.h"
 
@@ -26,6 +27,9 @@ ASWeapon::ASWeapon()
 	RootComponent = MeshComp;
 
 	SetReplicates(true);
+
+	NetUpdateFrequency = 66.f;
+	MinNetUpdateFrequency = 33.f;
 }
 
 void ASWeapon::BeginPlay()
@@ -37,6 +41,12 @@ void ASWeapon::BeginPlay()
 
 void ASWeapon::Fire()
 {
+	if (Role < ROLE_Authority)
+	{
+		ServerFire();
+		return;
+	}
+
 	AActor* Owner = GetOwner();
 
 	if (Owner)
@@ -51,6 +61,7 @@ void ASWeapon::Fire()
 
 		// A vector to represent an actual end of trace, is a Trace by default and change on hit
 		FVector TraceEndPoint = TraceEnd;
+		EPhysicalSurface PhysicalSurface = EPhysicalSurface::SurfaceType_Default;
 		
 		FCollisionQueryParams CollisionParams;
 		CollisionParams.AddIgnoredActor(this);
@@ -65,7 +76,7 @@ void ASWeapon::Fire()
 
 			TraceEndPoint = HitResult.ImpactPoint;
 
-			EPhysicalSurface PhysicalSurface = UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
+			PhysicalSurface = UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 
 			float ActualDamage = BaseDamage;
 			if (PhysicalSurface == SURFACE_FLASHVULNERABLE)
@@ -75,26 +86,14 @@ void ASWeapon::Fire()
 
 			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, HitResult, Owner->GetInstigatorController(), this, DamageType);
 
-			UParticleSystem* SelectedEffect = nullptr;
-
-			switch (PhysicalSurface)
-			{
-			case SURFACE_FLESHDEFAULT:
-			case SURFACE_FLASHVULNERABLE:
-				SelectedEffect = FleshImpactEffect;
-				break;
-			default:
-				SelectedEffect = DefaultImpactEffect;
-				break;
-			}
-
-			if (SelectedEffect)
-			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
-			}
+			PlayImpactEffects(PhysicalSurface, TraceEndPoint);
 		}
 
-		PlayFireEffects(TraceEnd);
+		if (Role == ROLE_Authority)
+		{
+			HitScanTrace.TraceTo = TraceEndPoint;
+			HitScanTrace.SurfaceType = PhysicalSurface;
+		}
 
 		if (DebugWeaponDrawing > 0)
 		{
@@ -103,6 +102,22 @@ void ASWeapon::Fire()
 
 	}
 
+}
+
+void ASWeapon::ServerFire_Implementation()
+{
+	Fire();
+}
+
+bool ASWeapon::ServerFire_Validate()
+{
+	return true;
+}
+
+void ASWeapon::OnRep_HitTraceScan()
+{
+	PlayFireEffects(HitScanTrace.TraceTo);
+	PlayImpactEffects(HitScanTrace.SurfaceType, HitScanTrace.TraceTo);
 }
 
 void ASWeapon::StartFire()
@@ -117,7 +132,7 @@ void ASWeapon::StopFire()
 	GetWorldTimerManager().ClearTimer(HandleTimer_TimeBetweenShots);
 }
 
-void ASWeapon::PlayFireEffects(const FVector& TraceEnd)
+void ASWeapon::PlayFireEffects(const FVector& TraceEnd) const
 {
 	if (MuzzleEffect)
 	{
@@ -144,4 +159,37 @@ void ASWeapon::PlayFireEffects(const FVector& TraceEnd)
 			PlayerController->ClientPlayCameraShake(CameraShake);
 		}
 	}
+}
+
+void ASWeapon::PlayImpactEffects(const EPhysicalSurface & SurfaceType, const FVector& ImpactPoint) const
+{
+	UParticleSystem* SelectedEffect = nullptr;
+
+	switch (SurfaceType)
+	{
+	case SURFACE_FLESHDEFAULT:
+	case SURFACE_FLASHVULNERABLE:
+		SelectedEffect = FleshImpactEffect;
+		break;
+	default:
+		SelectedEffect = DefaultImpactEffect;
+		break;
+	}
+
+	if (SelectedEffect)
+	{
+		FVector MuzzleLocation = MeshComp->GetSocketLocation(MuzzleSocketName);
+
+		FVector ShotDirection = ImpactPoint - MuzzleLocation;
+		ShotDirection.Normalize();
+
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, ImpactPoint, ShotDirection.Rotation());
+	}
+}
+
+void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ASWeapon, HitScanTrace, COND_SkipOwner);
 }

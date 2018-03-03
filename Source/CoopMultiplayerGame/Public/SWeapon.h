@@ -9,6 +9,21 @@
 class USkeletalMeshComponent;
 class UDamageType;
 
+
+USTRUCT()
+struct FHitScanTrace
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY()
+	TEnumAsByte<EPhysicalSurface> SurfaceType;
+
+	UPROPERTY()
+	FVector_NetQuantize TraceTo;
+};
+
 UCLASS()
 class COOPMULTIPLAYERGAME_API ASWeapon : public AActor
 {
@@ -22,7 +37,9 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	virtual void PlayFireEffects(const FVector& TraceEnd);
+	virtual void PlayFireEffects(const FVector& TraceEnd) const;
+
+	virtual void PlayImpactEffects(const EPhysicalSurface & SurfaceType, const FVector& ImpactPoint) const;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* MeshComp;
@@ -53,6 +70,9 @@ protected:
 
 	void Fire();
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerFire();
+
 	FTimerHandle HandleTimer_TimeBetweenShots;
 
 	float LastTimeFired;
@@ -61,6 +81,12 @@ protected:
 	float RateOfFire;
 
 	float TimeBetweenShots;
+
+	UPROPERTY(ReplicatedUsing=OnRep_HitTraceScan)
+	FHitScanTrace HitScanTrace;
+
+	UFUNCTION()
+	void OnRep_HitTraceScan();
 
 public:		
 	
