@@ -6,7 +6,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "PhysicsEngine/RadialForceComponent.h"
-
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ASExpolosiveBarrel::ASExpolosiveBarrel()
@@ -41,14 +41,25 @@ void ASExpolosiveBarrel::OnHealthChanged(USHealthComponent * OwningHealthComp, f
 	{
 		bExploded = true;
 
+		OnRep_Exploded();
+
 		FVector BoostIntensity = FVector::UpVector * ExplosionImpulse;
 		MeshComp->AddImpulse(BoostIntensity, NAME_None, true);
-
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
-
-		MeshComp->SetMaterial(0, ExplodedMaterial);
 
 		RadialForceComp->FireImpulse();
 	}
 }
 
+void ASExpolosiveBarrel::OnRep_Exploded()
+{
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
+
+	MeshComp->SetMaterial(0, ExplodedMaterial);
+}
+
+void ASExpolosiveBarrel::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ASExpolosiveBarrel, bExploded);
+}

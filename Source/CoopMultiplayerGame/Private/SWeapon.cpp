@@ -89,6 +89,8 @@ void ASWeapon::Fire()
 			PlayImpactEffects(PhysicalSurface, TraceEndPoint);
 		}
 
+		PlayFireEffects(HitScanTrace.TraceTo);
+
 		if (Role == ROLE_Authority)
 		{
 			HitScanTrace.TraceTo = TraceEndPoint;
