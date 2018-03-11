@@ -22,7 +22,8 @@ ASTrackerBot::ASTrackerBot()
 	MeshComp->SetSimulatePhysics(true);
 	RootComponent = MeshComp;
 
-	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealtComp"));
+	HealthComp = CreateDefaultSubobject<USHealthComponent>(TEXT("HealtComp"));
+	HealthComp->OnHealthChanged.AddDynamic(this, &ASTrackerBot::HandleTakeDamage);
 }
 
 // Called when the game starts or when spawned
@@ -48,6 +49,12 @@ FVector ASTrackerBot::GetNextPathPoint()
 	}
 
 	return RetVal;
+}
+
+void ASTrackerBot::HandleTakeDamage(USHealthComponent* OwningHealthComp, float Health, float HealthDelta,
+	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Health %s of %s"), *FString::SanitizeFloat(Health), *GetName());
 }
 
 // Called every frame

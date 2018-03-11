@@ -31,6 +31,10 @@ protected:
 
 	FVector NextPathPoint;
 
+	UFUNCTION()
+	void HandleTakeDamage(USHealthComponent* OwningHealthComp, float Health, float HealthDelta,
+		const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
 	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
 	float MovementForce;
 
