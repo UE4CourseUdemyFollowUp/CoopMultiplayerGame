@@ -5,6 +5,8 @@
 #include "Public/Components/SHealthComponent.h"
 #include "Runtime/Engine/Classes/AI/Navigation/NavigationSystem.h"
 #include "Runtime/Engine/Classes/AI/Navigation/NavigationPath.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 
@@ -13,6 +15,10 @@ ASTrackerBot::ASTrackerBot()
 	: MovementForce(1000.f)
 	, bUseVelocityChange(false)
 	, RequiredDistanceToTarget(100.f)
+	, MatInstance(nullptr)
+	, ExplosionDamage(100.f)
+	, ExplosionRadius(200.f)
+	, IsExploded(false)
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -54,7 +60,45 @@ FVector ASTrackerBot::GetNextPathPoint()
 void ASTrackerBot::HandleTakeDamage(USHealthComponent* OwningHealthComp, float Health, float HealthDelta,
 	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
 {
+
+	if (MatInstance == nullptr)
+	{
+		MatInstance = MeshComp->CreateAndSetMaterialInstanceDynamicFromMaterial(0, MeshComp->GetMaterial(0));
+	}
+
+	if (MatInstance)
+	{
+		MatInstance->SetScalarParameterValue("LastTimeDamageTaken", GetWorld()->TimeSeconds);
+	}
+
+	if (Health <= 0.f)
+	{
+		SelfDestruct();
+	}
+
+
 	UE_LOG(LogTemp, Warning, TEXT("Health %s of %s"), *FString::SanitizeFloat(Health), *GetName());
+}
+
+void ASTrackerBot::SelfDestruct()
+{
+	if (false == IsExploded)
+	{
+		IsExploded = true;
+
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
+
+		TArray<AActor*> IgnoredActors;
+		IgnoredActors.Add(this);
+		IgnoredActors.Shrink();
+
+		UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActors, this, GetInstigatorController(), true);
+
+		DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.f, 0, 2.f);
+
+		Destroy();
+	}
+
 }
 
 // Called every frame
