@@ -10,6 +10,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
 
 // Sets default values
@@ -22,6 +23,7 @@ ASTrackerBot::ASTrackerBot()
 	, ExplosionRadius(200.f)
 	, bIsExploded(false)
 	, bStartedSelfDestruction(false)
+	, SelfDestructionInterval(0.5f)
 {
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -50,10 +52,14 @@ void ASTrackerBot::NotifyActorBeginOverlap(AActor * OtherActor)
 
 		if (Character)
 		{
-			GetWorldTimerManager().SetTimer(TimerHandle_DamageSelf, this, &ASTrackerBot::DamageSelf, 0.5f, true, 0.f);
+			GetWorldTimerManager().SetTimer(TimerHandle_DamageSelf, this, &ASTrackerBot::DamageSelf, SelfDestructionInterval, true, 0.f);
+
+			UGameplayStatics::SpawnSoundAttached(SelfDestructionSound, RootComponent);
+
+			bStartedSelfDestruction = true;
 		}
 
-		bStartedSelfDestruction = true;
+		
 	}
 
 }
@@ -119,8 +125,11 @@ void ASTrackerBot::SelfDestruct()
 		IgnoredActors.Shrink();
 
 		UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActors, this, GetInstigatorController(), true);
+		UGameplayStatics::PlaySoundAtLocation(this, ExplosionSound, GetActorLocation());
 
 		DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.f, 0, 2.f);
+
+
 
 		Destroy();
 	}
@@ -129,7 +138,6 @@ void ASTrackerBot::SelfDestruct()
 
 void ASTrackerBot::DamageSelf()
 {
-	UE_LOG(LogTemp, Warning, TEXT("ASTrackerBot::DamageSelf()"));
 	UGameplayStatics::ApplyDamage(this, 20.f, GetInstigatorController(), this, nullptr);
 }
 
