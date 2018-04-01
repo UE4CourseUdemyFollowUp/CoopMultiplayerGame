@@ -1,7 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Public/AI/STrackerBot.h"
+#include "Public/SCharacter.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SphereComponent.h"
 #include "Public/Components/SHealthComponent.h"
 #include "Runtime/Engine/Classes/AI/Navigation/NavigationSystem.h"
 #include "Runtime/Engine/Classes/AI/Navigation/NavigationPath.h"
@@ -18,9 +20,10 @@ ASTrackerBot::ASTrackerBot()
 	, MatInstance(nullptr)
 	, ExplosionDamage(100.f)
 	, ExplosionRadius(200.f)
-	, IsExploded(false)
+	, bIsExploded(false)
+	, bStartedSelfDestruction(false)
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp"));
@@ -30,13 +33,36 @@ ASTrackerBot::ASTrackerBot()
 
 	HealthComp = CreateDefaultSubobject<USHealthComponent>(TEXT("HealtComp"));
 	HealthComp->OnHealthChanged.AddDynamic(this, &ASTrackerBot::HandleTakeDamage);
+
+	SphereComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
+	SphereComp->SetSphereRadius(ExplosionRadius);
+	SphereComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	SphereComp->SetCollisionResponseToAllChannels(ECR_Ignore);
+	SphereComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	SphereComp->SetupAttachment(RootComponent);
+}
+
+void ASTrackerBot::NotifyActorBeginOverlap(AActor * OtherActor)
+{
+	if (!bStartedSelfDestruction)
+	{
+		ASCharacter* Character = Cast<ASCharacter>(OtherActor);
+
+		if (Character)
+		{
+			GetWorldTimerManager().SetTimer(TimerHandle_DamageSelf, this, &ASTrackerBot::DamageSelf, 0.5f, true, 0.f);
+		}
+
+		bStartedSelfDestruction = true;
+	}
+
 }
 
 // Called when the game starts or when spawned
 void ASTrackerBot::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	NextPathPoint = GetNextPathPoint();
 }
 
@@ -51,7 +77,7 @@ FVector ASTrackerBot::GetNextPathPoint()
 	if (NavPath && NavPath->PathPoints.Num() > 1)
 	{
 		RetVal = NavPath->PathPoints[1];
-		
+
 	}
 
 	return RetVal;
@@ -82,9 +108,9 @@ void ASTrackerBot::HandleTakeDamage(USHealthComponent* OwningHealthComp, float H
 
 void ASTrackerBot::SelfDestruct()
 {
-	if (false == IsExploded)
+	if (false == bIsExploded)
 	{
-		IsExploded = true;
+		bIsExploded = true;
 
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
 
@@ -99,6 +125,12 @@ void ASTrackerBot::SelfDestruct()
 		Destroy();
 	}
 
+}
+
+void ASTrackerBot::DamageSelf()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ASTrackerBot::DamageSelf()"));
+	UGameplayStatics::ApplyDamage(this, 20.f, GetInstigatorController(), this, nullptr);
 }
 
 // Called every frame
