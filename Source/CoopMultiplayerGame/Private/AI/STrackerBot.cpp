@@ -46,7 +46,7 @@ ASTrackerBot::ASTrackerBot()
 
 void ASTrackerBot::NotifyActorBeginOverlap(AActor * OtherActor)
 {
-	if (!bStartedSelfDestruction)
+	if (!bStartedSelfDestruction && !bIsExploded)
 	{
 		ASCharacter* Character = Cast<ASCharacter>(OtherActor);
 
@@ -69,7 +69,10 @@ void ASTrackerBot::BeginPlay()
 {
 	Super::BeginPlay();
 
-	NextPathPoint = GetNextPathPoint();
+	if (Role == ROLE_Authority)
+	{
+		NextPathPoint = GetNextPathPoint();
+	}
 }
 
 FVector ASTrackerBot::GetNextPathPoint()
@@ -119,19 +122,23 @@ void ASTrackerBot::SelfDestruct()
 		bIsExploded = true;
 
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
-
-		TArray<AActor*> IgnoredActors;
-		IgnoredActors.Add(this);
-		IgnoredActors.Shrink();
-
-		UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActors, this, GetInstigatorController(), true);
 		UGameplayStatics::PlaySoundAtLocation(this, ExplosionSound, GetActorLocation());
 
-		DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.f, 0, 2.f);
+		MeshComp->SetVisibility(false, true);
+		MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+		if (Role == ROLE_Authority)
+		{
+			TArray<AActor*> IgnoredActors;
+			IgnoredActors.Add(this);
+			IgnoredActors.Shrink();
 
+			UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActors, this, GetInstigatorController(), true);
 
-		Destroy();
+			DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.f, 0, 2.f);
+
+			SetLifeSpan(2.f);
+		}
 	}
 
 }
@@ -146,25 +153,28 @@ void ASTrackerBot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	float DistanceToTargetLocation = (GetActorLocation() - NextPathPoint).Size();
-
-	if (DistanceToTargetLocation <= RequiredDistanceToTarget)
+	if (Role == ROLE_Authority && !bIsExploded)
 	{
-		NextPathPoint = GetNextPathPoint();
+		float DistanceToTargetLocation = (GetActorLocation() - NextPathPoint).Size();
 
-		DrawDebugString(GetWorld(), GetActorLocation(), "Target Reached");
+		if (DistanceToTargetLocation <= RequiredDistanceToTarget)
+		{
+			NextPathPoint = GetNextPathPoint();
+
+			DrawDebugString(GetWorld(), GetActorLocation(), "Target Reached");
+		}
+		else
+		{
+			FVector ForceDirection = NextPathPoint - GetActorLocation();
+			ForceDirection.Normalize();
+
+			ForceDirection *= MovementForce;
+
+			MeshComp->AddForce(ForceDirection, NAME_None, bUseVelocityChange);
+
+			DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + NextPathPoint, 32.f, FColor::Yellow, false, 0.f, 0, 1.f);
+		}
+
+		DrawDebugSphere(GetWorld(), NextPathPoint, 20.f, 12, FColor::Yellow, false, 10.f, 0, 1.f);
 	}
-	else
-	{
-		FVector ForceDirection = NextPathPoint - GetActorLocation();
-		ForceDirection.Normalize();
-
-		ForceDirection *= MovementForce;
-
-		MeshComp->AddForce(ForceDirection, NAME_None, bUseVelocityChange);
-
-		DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + NextPathPoint, 32.f, FColor::Yellow, false, 0.f, 0, 1.f);
-	}
-
-	DrawDebugSphere(GetWorld(), NextPathPoint, 20.f, 12, FColor::Yellow, false, 10.f, 0, 1.f);
 }
