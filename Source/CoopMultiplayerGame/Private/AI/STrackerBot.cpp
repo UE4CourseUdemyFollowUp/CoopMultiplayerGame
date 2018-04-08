@@ -23,7 +23,11 @@ ASTrackerBot::ASTrackerBot()
 	, ExplosionRadius(200.f)
 	, bIsExploded(false)
 	, bStartedSelfDestruction(false)
+	, BotsBundleRadius(600)
 	, SelfDestructionInterval(0.5f)
+	, NearbyBotsCheckInterval(0.5f)
+	, MaxPowerLevel(4)
+	, PowerLevel(0)
 {
 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -42,6 +46,50 @@ ASTrackerBot::ASTrackerBot()
 	SphereComp->SetCollisionResponseToAllChannels(ECR_Ignore);
 	SphereComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	SphereComp->SetupAttachment(RootComponent);
+}
+
+void ASTrackerBot::OnCheckNearbyBots()
+{
+	FCollisionShape CollisionShape;
+	CollisionShape.SetSphere(BotsBundleRadius);
+
+	FCollisionObjectQueryParams QueryParams;
+	QueryParams.AddObjectTypesToQuery(ECollisionChannel::ECC_PhysicsBody);
+	QueryParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
+
+	TArray<FOverlapResult> Overlaps;
+	GetWorld()->OverlapMultiByObjectType(Overlaps, GetActorLocation(), FQuat::Identity, QueryParams, CollisionShape);
+
+	DrawDebugSphere(GetWorld(), GetActorLocation(), BotsBundleRadius, 12, FColor::Blue, false, 1.f);
+
+	int NumOfBots = 0;
+
+	for (FOverlapResult Result : Overlaps)
+	{
+		ASTrackerBot* Bot = Cast<ASTrackerBot>(Result.GetActor());
+
+		if (Bot && Bot != this)
+		{
+			++NumOfBots;
+		}
+	}
+
+	MaxPowerLevel = 4;
+
+	PowerLevel = FMath::Clamp(NumOfBots, 0, MaxPowerLevel);
+
+	if (nullptr == MatInstance)
+	{
+		MatInstance = MeshComp->CreateAndSetMaterialInstanceDynamicFromMaterial(0, MeshComp->GetMaterial(0));
+	}
+	if (MatInstance)
+	{
+		float Alpha = PowerLevel / static_cast<float>(MaxPowerLevel);
+
+		MatInstance->SetScalarParameterValue(FName("PowerLevelAlpha"), Alpha);
+	}
+
+	DrawDebugString(GetWorld(), FVector::ZeroVector, FString::FromInt(PowerLevel), this, FColor::White, 1.f, true);
 }
 
 void ASTrackerBot::NotifyActorBeginOverlap(AActor * OtherActor)
@@ -72,6 +120,9 @@ void ASTrackerBot::BeginPlay()
 	if (Role == ROLE_Authority)
 	{
 		NextPathPoint = GetNextPathPoint();
+
+		FTimerHandle TimerHandle_CheckCheckNerbyBots;
+		GetWorldTimerManager().SetTimer(TimerHandle_CheckCheckNerbyBots, this, &ASTrackerBot::OnCheckNearbyBots, NearbyBotsCheckInterval, true);
 	}
 }
 
@@ -133,7 +184,9 @@ void ASTrackerBot::SelfDestruct()
 			IgnoredActors.Add(this);
 			IgnoredActors.Shrink();
 
-			UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActors, this, GetInstigatorController(), true);
+			float RealDamage = ExplosionDamage + (ExplosionDamage * PowerLevel);
+
+			UGameplayStatics::ApplyRadialDamage(this, RealDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActors, this, GetInstigatorController(), true);
 
 			DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.f, 0, 2.f);
 

@@ -19,6 +19,8 @@ public:
 	// Sets default values for this pawn's properties
 	ASTrackerBot();
 
+	void OnCheckNearbyBots();
+
 	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 
 	// Called every frame
@@ -83,4 +85,16 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
 	USoundCue* ExplosionSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+	float NearbyBotsCheckInterval;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+	int BotsBundleRadius;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+	int MaxPowerLevel;
+
+	int PowerLevel;
+
 };
