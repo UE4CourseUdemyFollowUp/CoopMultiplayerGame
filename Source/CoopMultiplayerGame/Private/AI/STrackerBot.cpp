@@ -94,6 +94,8 @@ void ASTrackerBot::OnCheckNearbyBots()
 
 void ASTrackerBot::NotifyActorBeginOverlap(AActor * OtherActor)
 {
+	Super::NotifyActorBeginOverlap(OtherActor);
+
 	if (!bStartedSelfDestruction && !bIsExploded)
 	{
 		ASCharacter* Character = Cast<ASCharacter>(OtherActor);
