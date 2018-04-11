@@ -24,20 +24,23 @@ void ASPowerupActor::OnPowerupTick()
 {
 	++TicksProcessed;
 
+	OnTicked();
+
 	if (TicksProcessed >= TotalNrOfTicks)
 	{
-		GetWorldTimerManager().ClearTimer(TimerHanlde_PowerupTick);
-
 		OnExpired();
 
+		GetWorldTimerManager().ClearTimer(TimerHanlde_PowerupTick);
 	}
 }
 
 void ASPowerupActor::ActivatePowerup()
 {
+	OnActivated();
+
 	if (PowerupInterval > 0.f)
 	{
-		GetWorldTimerManager().SetTimer(TimerHanlde_PowerupTick, this, &ASPowerupActor::OnPowerupTick, PowerupInterval, true, 0.f);
+		GetWorldTimerManager().SetTimer(TimerHanlde_PowerupTick, this, &ASPowerupActor::OnPowerupTick, PowerupInterval, true);
 	}
 	else
 	{
