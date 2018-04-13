@@ -30,7 +30,7 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Components")
 	UDecalComponent* DecalComp;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Components")
+	UPROPERTY(EditInstanceOnly, Category = "Components")
 	TSubclassOf<ASPowerupActor> PowerupActorClass;
 
 	ASPowerupActor* PowerupActorInstance;
