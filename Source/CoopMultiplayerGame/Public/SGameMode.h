@@ -36,6 +36,10 @@ protected:
 
 	void CheckWaveState();
 
+	void CheckAnyPlayerAlive();
+
+	void GameOver();
+
 	FTimerHandle TimerHandle_BotSpawner;
 
 	FTimerHandle TimerHandle_NextWaveStart;
