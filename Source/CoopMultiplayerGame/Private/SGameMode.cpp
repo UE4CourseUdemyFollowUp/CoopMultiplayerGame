@@ -2,6 +2,7 @@
 
 #include "SGameMode.h"
 #include "Public/Components/SHealthComponent.h"
+#include "Public/SGameState.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
 
@@ -11,6 +12,8 @@ ASGameMode::ASGameMode()
 	, TimeBetweenWaves(2.f)
 	, WaveCount(0)
 {
+	GameStateClass = ASGameState::StaticClass();
+
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.TickInterval = 1.f;
 }
@@ -37,16 +40,22 @@ void ASGameMode::StartWave()
 	NrOfBotsToSpawn = 2 * WaveCount;
 
 	GetWorldTimerManager().SetTimer(TimerHandle_BotSpawner, this, &ASGameMode::SpawnTimerElapsed, 0.3f, true, 0.f);
+
+	SetWaveState(EWaveState::WaveInProgress);
 }
 
 void ASGameMode::EndWave()
 {
 	GetWorldTimerManager().ClearTimer(TimerHandle_BotSpawner);
+
+	SetWaveState(EWaveState::WaitingToComplete);
 }
 
 void ASGameMode::PrepareForNextWave()
 {
 	GetWorldTimerManager().SetTimer(TimerHandle_NextWaveStart, this, &ASGameMode::StartWave, TimeBetweenWaves, false);
+
+	SetWaveState(EWaveState::WaitingToStart);
 }
 
 void ASGameMode::SpawnTimerElapsed()
@@ -90,6 +99,8 @@ void ASGameMode::CheckWaveState()
 
 	if (!bIsAnyBotsAlive)
 	{
+		SetWaveState(EWaveState::WaveComplete);
+
 		PrepareForNextWave();
 	}
 }
@@ -118,5 +129,16 @@ void ASGameMode::GameOver()
 {
 	EndWave();
 
+	SetWaveState(EWaveState::GameOver);
+
 	UE_LOG(LogTemp, Error, TEXT("GAME OVER! Players died!"));
+}
+
+void ASGameMode::SetWaveState(EWaveState NewWaveState)
+{
+	ASGameState* GS = GetGameState<ASGameState>();
+	if (ensureAlways(GS))
+	{
+		GS->SetWaveState(NewWaveState);
+	}
 }
