@@ -3,6 +3,7 @@
 #include "SGameMode.h"
 #include "Public/Components/SHealthComponent.h"
 #include "Public/SGameState.h"
+#include "Public/SPlayerState.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
 
@@ -13,6 +14,7 @@ ASGameMode::ASGameMode()
 	, WaveCount(0)
 {
 	GameStateClass = ASGameState::StaticClass();
+	PlayerStateClass = ASPlayerState::StaticClass();
 
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.TickInterval = 1.f;
