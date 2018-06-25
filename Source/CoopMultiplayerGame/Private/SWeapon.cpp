@@ -22,6 +22,7 @@ ASWeapon::ASWeapon()
 	: MuzzleSocketName("MuzzleSocket")
 	, BaseDamage(20.f)
 	, RateOfFire(600.f)
+	, BulletSpread(2.f)
 {
 	MeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComp"));
 	RootComponent = MeshComp;
@@ -56,6 +57,9 @@ void ASWeapon::Fire()
 		Owner->GetActorEyesViewPoint(EyeLocation, EyeRotation);
 
 		FVector ShotDirection = EyeRotation.Vector();
+
+		float HalfRad = FMath::DegreesToRadians(BulletSpread);
+		ShotDirection = FMath::VRandCone(ShotDirection, HalfRad, HalfRad);
 
 		FVector TraceEnd = EyeLocation + ShotDirection * 10000;
 
