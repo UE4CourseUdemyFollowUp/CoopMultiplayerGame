@@ -88,7 +88,7 @@ void ASWeapon::Fire()
 				ActualDamage *= 4.f;
 			}
 
-			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, HitResult, Owner->GetInstigatorController(), this, DamageType);
+			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, HitResult, Owner->GetInstigatorController(), Owner, DamageType);
 
 			PlayImpactEffects(PhysicalSurface, TraceEndPoint);
 		}
